@@ -2,7 +2,7 @@
   "name": "vite-plugin-data",
   "description": "Resolve and bundle *.data.{js,ts} file exports at build-time.",
   "license": "ISC",
-  "version": "0.0.0-placeholder.0",
+  "version": "0.0.0-placeholder.1",
   "scripts": {
     "build": "tsc -p src/tsconfig.build.json"
   },
