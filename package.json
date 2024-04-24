@@ -1,0 +1,19 @@
+{
+  "private": true,
+  "name": "root",
+  "type": "module",
+  "packageManager": "pnpm@9.0.6+sha256.0624e30eff866cdeb363b15061bdb7fd9425b17bc1bb42c22f5f4efdea21f6b3",
+  "scripts": {
+    "start": "pnpm --filter demo start",
+    "build": "pnpm -r run build",
+    "test": "eslint . && vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@vitest/coverage-v8": "^1.5.1",
+    "eslint": "^8.57.0",
+    "eslint-config-rational": "^5.0.9",
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.1"
+  }
+}

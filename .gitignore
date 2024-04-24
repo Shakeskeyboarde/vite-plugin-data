@@ -1,0 +1,13 @@
+.vscode/
+node_modules/
+lib/
+dist/
+out/
+coverage/
+
+.DS_Store
+*.tar
+*.gz
+*.tgz
+*.zip
+*.log

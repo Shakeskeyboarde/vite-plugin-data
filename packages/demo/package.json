@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "demo",
+  "scripts": {
+    "start": "vite -c src/vite.config.ts",
+    "build": "vite -c src/vite.config.ts build"
+  },
+  "type": "module",
+  "devDependencies": {
+    "vite": "^5.2.10",
+    "vite-plugin-checker": "^0.6.4",
+    "vite-plugin-data": "workspace:*"
+  }
+}

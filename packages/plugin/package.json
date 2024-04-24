@@ -1,0 +1,19 @@
+{
+  "name": "vite-plugin-data",
+  "description": "Resolve *.data.js file exports at build-time and bundle them as JSON-only modules.",
+  "version": "0.0.0-placeholder",
+  "scripts": {
+    "build": "tsc -p src/tsconfig.build.json"
+  },
+  "type": "module",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "peerDependencies": {
+    "vite": "^5.2.10"
+  }
+}
