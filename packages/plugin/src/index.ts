@@ -93,9 +93,9 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
 
       // Enable Typescript import support the first time a Typescript data
       // loader file is encountered.
-      if (!isTsNodeRegistered && id.endsWith('.ts')) {
+      if (!isTsNodeRegistered && id.endsWith('ts')) {
         isTsNodeRegistered = true;
-        register('ts-node/esm', import.meta.url);
+        register('ts-node/esm/transpile-only', import.meta.url);
       }
 
       const [config, exports] = await Promise.all([
