@@ -105,18 +105,44 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
         import(`${id}?__vite_plugin_data__=${importCount++}`) as Promise<Record<string, unknown>>,
       ]);
 
-      /**
-       * Generated code from the pre-resolved data loader exports.
-       */
-      const code = Object.entries(exports)
-        .reduce((acc, [key, value]) => {
-          const jsonString = JSON.stringify(value, (_key, rawValue) => {
-            assertJsonSafe(rawValue);
-            return rawValue;
-          }, 2);
+      const exportPromises = Object.entries(exports).map(async ([key, value]) => {
+        /**
+         * Awaited (non-promise) value exported by the data loader. Only
+         * `Promise` instances are supported, not promise-like objects.
+         */
+        const resolved = value instanceof Promise ? await value : value;
 
-          return `${acc}export ${key === 'default' ? 'default' : `const ${key} =`} ${jsonString};\n`;
-        }, '');
+        /**
+         * Stringified representation of the JSON-safe export value.
+         */
+        const encoded = JSON.stringify(resolved, (_key, rawValue) => {
+          assertJsonSafe(rawValue);
+          return rawValue;
+        }, 2);
+
+        /**
+         * Either a default or named export statement prefix.
+         */
+        const prefix = key === 'default' ? 'default' : `const ${key} =`;
+
+        /**
+         * Either a simple value or a pre-resolved promise if the originally
+         * exported value was a promise.
+         */
+        const suffix = value instanceof Promise ? `Promise.resolve(${encoded})` : encoded;
+
+        return `export ${prefix} ${suffix};\n`;
+      });
+
+      /**
+       * Resolved (in parallel) export statements.
+       */
+      const exportStatements = await Promise.all(exportPromises);
+
+      /**
+       * Code generated from the resolved export statements.
+       */
+      const code = exportStatements.join('');
 
       // Configure watching for HMR support in development mode.
       if (watcher && config.watch) {

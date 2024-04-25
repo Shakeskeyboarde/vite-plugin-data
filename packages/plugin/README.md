@@ -84,7 +84,18 @@ The JSON object which follows the `vite-plugin-data` comment keyword is parsed a
 
 ## Limitations
 
-The resolved exports must be JSON-serializable. This plugin will raise an error if the exports contain any non-JSON-serializable values, including class instances.
+### JSON-Safe Exports
+
+Data loader resolved exports must be JSON-safe values or _promises_ for JSON-safe values.
+
+JSON-safe values include the following types:
+
+- Any primitive
+- Any value with a `toJSON` method
+- Any object that is not a class instance and contains only JSON-safe values
+- Any array that contains only JSON-safe values
+
+Exported promises are awaited at build-time. The resolved value is injected into the bundle wrapped in a pre-resolved promise (eg. `Promise.resolve(<value>)`). This allows for asynchronous data loading at build-time in contexts where [top-level awaits](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await#top_level_await) are not supported (eg. CommonJS modules).
 
 ## Side Effects
 
