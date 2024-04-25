@@ -23,6 +23,14 @@ class Foo {
 export const foo = new Foo();
 
 /**
+ * Should not cause an error because promises are resolve and replaced with
+ * a promise that is pre-resolved with the awaited value.
+ */
+export const promise = Promise.resolve().then(async () => {
+  return 'promised value';
+});
+
+/**
  * Message from the local JSON file.
  */
 export default JSON.parse(text).message as string;
