@@ -6,6 +6,6 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "types": [],
+    "types": ["node"],
   }
 }
