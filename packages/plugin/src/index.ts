@@ -230,14 +230,16 @@ const assertJsonSafe = (value: unknown): void => {
   if (typeof value === 'boolean') return;
   if (Array.isArray(value)) return;
 
-  // Objects must have a null or null-Object prototype, indicating they are
-  // not class instances.
+  // Objects must have a null/null-Object prototype which indicating they are
+  // not class instances, or a toJSON method which returns a JSON-safe value.
   if (typeof value === 'object') {
+    if ('toJSON' in value && typeof value.toJSON === 'function') return;
+
     const proto = Object.getPrototypeOf(value);
 
     if (proto === Object.prototype) return;
     if (proto === null) return;
   }
 
-  throw new Error(`data loader exported value that is not JSON serializable`);
+  throw new Error(`data loader exported value that is not JSON-safe`);
 };
