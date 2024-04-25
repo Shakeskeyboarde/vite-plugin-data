@@ -2,10 +2,10 @@ import fs from 'node:fs/promises';
 import { register } from 'node:module';
 import path from 'node:path';
 
-import micromatch from 'micromatch';
+import picomatch from 'picomatch';
 import RJSON from 'really-relaxed-json';
-import { type FSWatcher, type Plugin } from 'vite';
-import { z, ZodError, type ZodIssue } from 'zod';
+import { createLogger, type FSWatcher, type Plugin } from 'vite';
+import { z, ZodError } from 'zod';
 
 type Config = z.infer<typeof $config>;
 
@@ -21,15 +21,16 @@ export interface PluginOptions {
 }
 
 /**
- * Vite plugin which resolves `*.data.{js|ts}` file exports at build-time and bundles them as JSON-only modules.
+ * A Vite plugin that resolves the exports of data loader files at build-time
+ * and replaces the original file source with the pre-resolved exports.
  */
 export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
-  // Enable direct dynamic importing of TypeScript files with TS extensions.
-  register('ts-node/esm', import.meta.url);
-
   /**
-   * Map of watched patterns to module IDs that should be invalidated when
-   * a file matching the pattern changes.
+   * Map of watched patterns (keys) to module IDs (values) that should be
+   * invalidated when a file matching the pattern changes.
+   *
+   * This is stored as a Map with Set values (multi-map), so that reloads
+   * don't cause unbounded growth.
    */
   const watchPatternToModuleIds = new Map<string, Set<string>>();
 
@@ -47,6 +48,11 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
   let importCount = 0;
 
   /**
+   * Guard which prevents `ts-node/esm` from being registered multiple times.
+   */
+  let isTsNodeRegistered = false;
+
+  /**
    * Update the watcher and the invalidation map.
    */
   const watch = (relativePattern: string, id: string): void => {
@@ -54,35 +60,48 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
     let ids = watchPatternToModuleIds.get(pattern);
 
     if (!ids) {
+      // XXX: Only add the pattern to the watcher if it's a new pattern,
+      // because I'm not confident that chokidar will deduplicate.
+      watcher?.add(pattern);
       ids = new Set();
       watchPatternToModuleIds.set(pattern, ids);
     }
 
     ids.add(id);
-    watcher?.add(pattern);
   };
 
   return {
     name: 'vite-plugin-data',
     enforce: 'pre',
+    configResolved(config) {
+      // Capture the logger instance for logging.
+      logger = config.logger;
+    },
     configureServer(server) {
-      // Capture the watcher instance so data loaders can add watched files.
+      // Capture the watcher instance so data loaders can add watch patterns.
       watcher = server.watcher;
     },
     async load(id) {
-      // The id is not an absolute file path.
+      // The ID is not an absolute file path.
       if (!path.isAbsolute(id)) return;
 
-      // The id matches an ignore pattern.
-      if (micromatch.isMatch(id, ['**/node_modules/**', ...ignore])) return;
+      // The ID matches an ignore pattern.
+      if (isMatch(id, ['**/node_modules/**', ...ignore])) return;
 
-      // The id does not end with a data loader extension.
+      // The ID does not end with a data loader extension.
       if (!/\.data\.(?:js|cjs|mjs|ts|cts|mts)$/iu.test(id)) return;
+
+      // Enable Typescript import support the first time a Typescript data
+      // loader file is encountered.
+      if (!isTsNodeRegistered && id.endsWith('.ts')) {
+        isTsNodeRegistered = true;
+        register('ts-node/esm', import.meta.url);
+      }
 
       const [config, exports] = await Promise.all([
         // Read and parse the vite-plugin-data configuration comment.
-        parseConfigComment(id, (issue) => this[issue.fatal ? 'error' : 'warn'](`${issue.path}: ${issue.message}`)),
-        // Resolve the data loader exports.
+        parseConfigComment(id),
+        // Resolve the data loader's exports.
         import(`${id}?__vite_plugin_data__=${importCount++}`) as Promise<Record<string, unknown>>,
       ]);
 
@@ -99,21 +118,21 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
           return `${acc}export ${key === 'default' ? 'default' : `const ${key} =`} ${jsonString};\n`;
         }, '');
 
-      // Configure watching for HMR in development mode.
+      // Configure watching for HMR support in development mode.
       if (watcher && config.watch) {
         for (const pattern of Array.isArray(config.watch) ? config.watch : [config.watch]) {
           watch(pattern, id);
         }
       }
 
-      return { code };
+      return { code, moduleSideEffects: false };
     },
     async handleHotUpdate(ctx) {
       const invalidatedIds = new Set<string>();
 
       // Check all the watched patterns to see if they match.
       for (const [pattern, ids] of watchPatternToModuleIds.entries()) {
-        if (micromatch.isMatch(ctx.file, pattern)) {
+        if (isMatch(ctx.file, pattern)) {
           // The pattern matches, so invalidate all of the data loader module
           // IDs that are watching for the pattern.
           ids.forEach((id) => invalidatedIds.add(id));
@@ -140,19 +159,40 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
 };
 
 /**
- * Configuration scheme used to parse and validate the configuration comment
+ * Vite logger.
+ */
+let logger = createLogger();
+
+/**
+ * Prefixed logger.
+ */
+const log = (level: 'info' | 'warn' | 'error', message: string): void => {
+  logger[level](`[vite-plugin-data] ${message}`);
+};
+
+/**
+ * Configuration schema used to parse and validate the configuration comment
  * JSON data in data loader files.
  */
 const $config = z.object({
   watch: z.array(z.string()).or(z.string()).optional(),
 });
 
+const isMatch = (id: string, patterns: string | string[]): boolean => {
+  return picomatch.isMatch(
+    id,
+    patterns,
+    // This is what anymatch (and therefore chokidar) use.
+    { dot: true },
+  );
+};
+
 /**
  * Parse the vite-plugin-data configuration comment in the specified file (id).
  * This applies relaxed JSON parsing and throws errors if the configuration
  * does not match the expected schema.
  */
-const parseConfigComment = async (id: string, onIssue: (issue: ZodIssue) => void): Promise<Config> => {
+const parseConfigComment = async (id: string): Promise<Config> => {
   const source = await fs.readFile(id, 'utf-8');
   const match = source.match(/\/\*\s*vite-plugin-data\s(.*?)\*\//su);
 
@@ -163,10 +203,18 @@ const parseConfigComment = async (id: string, onIssue: (issue: ZodIssue) => void
   }
   catch (error) {
     if (error instanceof ZodError) {
-      error.issues.forEach(onIssue);
+      error.issues.forEach((issue) => {
+        log(
+          issue.fatal ? 'error' : 'warn',
+          `invalid "${issue.path.join('.')}" config in "${id}"`,
+        );
+      });
+    }
+    else {
+      log('error', `failed parsing config in "${id}"`);
     }
 
-    throw new Error(`invalid vite-plugin-data configuration in "${id}"`);
+    return {};
   }
 };
 
@@ -181,9 +229,14 @@ const assertJsonSafe = (value: unknown): void => {
   if (typeof value === 'number') return;
   if (typeof value === 'boolean') return;
   if (Array.isArray(value)) return;
+
+  // Objects must have a null or null-Object prototype, indicating they are
+  // not class instances.
   if (typeof value === 'object') {
-    if (Object.getPrototypeOf(value) === Object.prototype) return;
-    if (Object.getPrototypeOf(value) === null) return;
+    const proto = Object.getPrototypeOf(value);
+
+    if (proto === Object.prototype) return;
+    if (proto === null) return;
   }
 
   throw new Error(`data loader exported value that is not JSON serializable`);

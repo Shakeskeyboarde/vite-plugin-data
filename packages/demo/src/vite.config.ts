@@ -8,7 +8,6 @@ import data from 'vite-plugin-data';
 process.chdir(path.dirname(url.fileURLToPath(import.meta.url)));
 
 export default defineConfig({
-  clearScreen: false,
   plugins: [
     checker({ typescript: true }),
     data(),

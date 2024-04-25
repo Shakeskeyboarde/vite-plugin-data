@@ -48,12 +48,12 @@ importers:
 
   packages/plugin:
     dependencies:
-      '@types/micromatch':
-        specifier: ^4.0.7
-        version: 4.0.7
-      micromatch:
-        specifier: ^4.0.5
-        version: 4.0.5
+      '@types/picomatch':
+        specifier: ^2.3.3
+        version: 2.3.3
+      picomatch:
+        specifier: ^4.0.2
+        version: 4.0.2
       really-relaxed-json:
         specifier: ^0.3.2
         version: 0.3.2
@@ -61,7 +61,7 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.12.7)(typescript@5.4.5)
       vite:
-        specifier: ^5.2.10
+        specifier: ^5.0.0
         version: 5.2.10(@types/node@20.12.7)
       zod:
         specifier: ^3.23.4
@@ -453,9 +453,6 @@ packages:
   '@tsconfig/node16@1.0.4':
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
 
-  '@types/braces@3.0.4':
-    resolution: {integrity: sha512-0WR3b8eaISjEW7RpZnclONaLFDf7buaowRHdqLp4vLj54AsSAYWfh3DRbfiYJY9XDxMgx1B4sE1Afw2PGpuHOA==}
-
   '@types/eslint@8.56.10':
     resolution: {integrity: sha512-Shavhk87gCtY2fhXDctcfS3e6FdxWkCx1iUZ9eEUbh7rTqlZT0/IzOkCOVt0fCjcFuZ9FPYfuezTBImfHCDBGQ==}
 
@@ -465,14 +462,14 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
-  '@types/micromatch@4.0.7':
-    resolution: {integrity: sha512-C/FMQ8HJAZhTsDpl4wDKZdMeeW5USjgzOczUwTGbRc1ZopPgOhIEnxY2ZgUrsuyy4DwK1JVOJZKFakv3TbCKiA==}
-
   '@types/node@20.12.7':
     resolution: {integrity: sha512-wq0cICSkRLVaf3UGLMGItu/PtdY7oaXaI/RVU+xliKVOtRna3PRY57ZDfztpDL0n11vfymMUnXv8QwYCO7L1wg==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
+
+  '@types/picomatch@2.3.3':
+    resolution: {integrity: sha512-Yll76ZHikRFCyz/pffKGjrCwe/le2CDwOP5F210KQo27kpRE46U2rDnzikNlVn6/ezH3Mhn46bJMTfeVTtcYMg==}
 
   '@types/semver@7.5.8':
     resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
@@ -2455,8 +2452,6 @@ snapshots:
 
   '@tsconfig/node16@1.0.4': {}
 
-  '@types/braces@3.0.4': {}
-
   '@types/eslint@8.56.10':
     dependencies:
       '@types/estree': 1.0.5
@@ -2466,15 +2461,13 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/micromatch@4.0.7':
-    dependencies:
-      '@types/braces': 3.0.4
-
   '@types/node@20.12.7':
     dependencies:
       undici-types: 5.26.5
 
   '@types/normalize-package-data@2.4.4': {}
+
+  '@types/picomatch@2.3.3': {}
 
   '@types/semver@7.5.8': {}
 
