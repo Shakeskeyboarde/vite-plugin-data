@@ -2,7 +2,7 @@
   "name": "vite-plugin-data",
   "description": "Resolve and bundle data loader file exports at build-time.",
   "license": "ISC",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "keywords": [
     "vite",
     "vite-plugin",
@@ -17,7 +17,8 @@
     "resolve"
   ],
   "scripts": {
-    "build": "tsc -p src/tsconfig.build.json"
+    "build": "tsc -p src/tsconfig.build.json",
+    "prepublishOnly": "pnpm build"
   },
   "files": [
     "lib"
