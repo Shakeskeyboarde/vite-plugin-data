@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import picomatch from 'picomatch';
 import RJSON from 'really-relaxed-json';
-import { createLogger, type FSWatcher, type Plugin } from 'vite';
+import { createLogger, type FSWatcher, normalizePath, type Plugin } from 'vite';
 import { z, ZodError } from 'zod';
 
 type Config = z.infer<typeof $config>;
@@ -48,6 +48,11 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
   let importCount = 0;
 
   /**
+   * Absolute ignore patterns which are normalized to the `config.root`.
+   */
+  let ignorePatterns: string[] = [];
+
+  /**
    * Guard which prevents `ts-node/esm` from being registered multiple times.
    */
   let isTsNodeRegistered = false;
@@ -56,18 +61,18 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
    * Update the watcher and the invalidation map.
    */
   const watch = (relativePattern: string, id: string): void => {
-    const pattern = path.resolve(path.dirname(id), relativePattern).replaceAll(/\\/gu, '/');
-    let ids = watchPatternToModuleIds.get(pattern);
+    const pattern = normalizePatterns(relativePattern, path.dirname(id))[0]!;
+    const ids = watchPatternToModuleIds.get(pattern);
 
     if (!ids) {
       // XXX: Only add the pattern to the watcher if it's a new pattern,
       // because I'm not confident that chokidar will deduplicate.
       watcher?.add(pattern);
-      ids = new Set();
-      watchPatternToModuleIds.set(pattern, ids);
+      watchPatternToModuleIds.set(pattern, new Set(id));
     }
-
-    ids.add(id);
+    else {
+      ids.add(id);
+    }
   };
 
   return {
@@ -76,6 +81,8 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
     configResolved(config) {
       // Capture the logger instance for logging.
       logger = config.logger;
+      // Use the config.root to normalize and initialize the ignore patterns.
+      ignorePatterns = normalizePatterns(ignore, config.root);
     },
     configureServer(server) {
       // Capture the watcher instance so data loaders can add watch patterns.
@@ -89,15 +96,19 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
       if (!path.isAbsolute(id)) return;
 
       // The ID matches an ignore pattern.
-      if (isMatch(id, ['**/node_modules/**', ...ignore])) return;
+      if (isMatch(id, ['**/node_modules/**', ...ignorePatterns])) return;
 
       // The ID does not end with a data loader extension.
       if (!/\.data\.(?:js|cjs|mjs|ts|cts|mts)$/iu.test(id)) return;
 
-      // Enable Typescript import support the first time a Typescript data
-      // loader file is encountered.
+      // Enable Node Typescript support the first time a Typescript data
+      // loader is encountered.
       if (!isTsNodeRegistered && id.endsWith('ts')) {
         isTsNodeRegistered = true;
+        // XXX: There's currently no way to get the transitive file
+        // dependencies of modules loaded this way, so they can't be used to
+        // enable HMR. Possible future alternatives include using custom hooks
+        // to track dependencies, or using Vite to bundle data loaders.
         register('ts-node/esm/transpile-only', import.meta.url);
       }
 
@@ -201,12 +212,32 @@ const log = (level: 'info' | 'warn' | 'error', message: string): void => {
 
 /**
  * Configuration schema used to parse and validate the configuration comment
- * JSON data in data loader files.
+ * JSON data in data loaders.
  */
 const $config = z.object({
   watch: z.array(z.string()).or(z.string()).optional(),
 });
 
+/**
+ * Normalize glob patterns. This means resolving them using the `root` if they
+ * begin with a dot, and normalizing the path separators to forward slashes.
+ */
+const normalizePatterns = (patterns: string | string[], root: string): string[] => {
+  if (typeof patterns === 'string') {
+    patterns = [patterns];
+  }
+
+  return (typeof patterns === 'string' ? [patterns] : patterns)
+    .map((pattern) => {
+      return pattern.startsWith('.')
+        ? normalizePath(path.resolve(root, pattern))
+        : normalizePath(pattern);
+    });
+};
+
+/**
+ * Pre-configured picomatch matcher.
+ */
 const isMatch = (id: string, patterns: string | string[]): boolean => {
   return picomatch.isMatch(
     id,
