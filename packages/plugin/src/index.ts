@@ -82,6 +82,9 @@ export default ({ ignore = [] }: PluginOptions = {}): Plugin => {
       watcher = server.watcher;
     },
     async load(id) {
+      // Strip query parameters from the ID (not used here).
+      id = id.replace(/\?.*$/u, '');
+
       // The ID is not an absolute file path.
       if (!path.isAbsolute(id)) return;
 
