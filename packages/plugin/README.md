@@ -70,7 +70,7 @@ data({
 
 ## Adding Watch Patterns
 
-Sometimes your data loaders may depend on other files. If those other files change, the data loader should also be considered changed for the purposes of HMR. You can provide watch patterns (globs) using a configuration comment in the data file. All paths must use forward slashes. Relative paths are relative to the data file containing the comment.
+Sometimes your data loaders may depend on other files. If those other files change, the data loader should also be considered changed for the purposes of HMR. You can provide watch patterns (globs) using a configuration comment in the data loader. All paths must use forward slashes. Relative paths are relative to the data loader containing the comment.
 
 ```ts
 /* vite-plugin-data {
