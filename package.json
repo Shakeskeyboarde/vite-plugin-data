@@ -7,7 +7,7 @@
   "scripts": {
     "start": "pnpm --stream --filter vite-plugin-data build && pnpm --stream --filter demo start",
     "build": "pnpm --stream -r run build",
-    "test": "eslint . && vitest"
+    "test": "eslint . && vitest run"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
