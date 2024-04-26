@@ -10,8 +10,8 @@ export default defineConfig({
     coverage: {
       enabled: true,
       all: true,
-      // include: [path.resolve(__dirname, 'packages/*/src/**')],
       reporter: ['html', 'text-summary'],
+      reportsDirectory: path.resolve(__dirname, 'out/coverage'),
     },
   },
 });
