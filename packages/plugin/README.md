@@ -53,19 +53,6 @@ import { timestamp } from './timestamp.data.js';
 
 ## Plugin Options
 
-### ignore
-
-Ignore file patterns which should not be treated as data loaders.
-
-```ts
-data({
-  // Ignore all test files.
-  ignore: ['**/*.@(spec|test).*']
-});
-```
-
-> NOTE: Files inside `node_modules` directories are always ignored.
-
 ### config
 
 A Vite configuration (`UserConfig`) object that is used to transpile/bundle data loaders. By default, the plugin uses an internal Vite configuration that only inherits the `root` and `resolve.alias` options from parent configuration.
@@ -80,6 +67,19 @@ data({
   },
 });
 ```
+
+### ignore
+
+Ignore file patterns which should not be treated as data loaders.
+
+```ts
+data({
+  // Ignore all test files.
+  ignore: ['**/*.@(spec|test).*']
+});
+```
+
+> NOTE: Files inside `node_modules` directories are always ignored.
 
 ## Data Loader Dependencies
 
@@ -132,8 +132,9 @@ In addition to the Vite plugin, the following exports are also available.
 
 ### `load`
 
-Get the exports of a data loader. This will bundle the data loader and import
-the bundle entrypoint.
+Get the exports of a data loader. This will bundle the data loader entrypoint, and import the generated bundle.
+
+This is used by the plugin to get each data loader's exports.
 
 Signature:
 
@@ -144,22 +145,81 @@ async function load(filename: string, config?: UserConfig): Promise<Result>;
 Example:
 
 ```ts
-import { load } from 'vite-plugin-data';
+import { load, Result } from 'vite-plugin-data';
 
-const {
-  exports,
-  dependencies,
-  dependencyPatterns
-} = await load('./timestamp.data.js', {
+const result: Result = await load('./timestamp.data.js', {
   // Optional Vite config for data loader bundling.
 });
 ```
 
 Returns:
 
-- `exports`
-  - Result of importing the data loader bundle.
-- `dependencies`
-  - Absolute paths of all modules included in the data loader bundle.
-- `dependencyPatterns`
-  - Normalized dependency patterns defined in the data loader configuration comment.
+A [Result](#result) instance.
+  
+### `compile`
+
+Convert data loader exports (or any JSON-safe object) to a string of Javascript code.
+
+This function is used by the plugin to generate bundle code for each data loader's exports. The code is a collection of export statements corresponding to the properties in the exports object. The `default` property produces a default export, and all other properties produce named (const) exports.
+
+Signature:
+
+```ts
+async function compile(exports: Record<string, unknown>): Promise<string>;
+```
+
+Example:
+
+```ts
+const code = await compile({
+  default: 42,
+  foo: 'FOO',
+  bar: getSomeStringAsynchronously() satisfies Promise<string>,
+});
+```
+
+Returns:
+
+A string of Javascript code. The above example would produce the following code string.
+
+```text
+export default 42;
+export const foo = "FOO";
+export const bar = Promise.resolve("string returned by async function");
+```
+
+### `Result`
+
+The result type returned by the `load` function. It contains the data loader exports and dependency information.
+
+#### Property: `exports`
+
+An exports object imported from a data loader bundle.
+
+#### Property: `dependencies`
+
+An array of absolute paths to all modules included in the data loader bundle.
+
+#### Property: `dependencyPatterns`
+
+An array of normalized dependency glob patterns defined in the data loader configuration comment.
+
+#### Method: `dependsOn`
+
+Signature:
+
+```ts
+function dependsOn(this: Result, filename: string): boolean;
+```
+
+Example:
+
+```ts
+if (result.dependsOn('/absolute/path/to/some/modified/file')) {
+  // Invalidate the HMR module for the data loader that produced the result.
+}
+```
+
+Returns:
+
+True if the absolute `filename` matches one of the result `dependencies` or `dependencyPatterns`. False otherwise.

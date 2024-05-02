@@ -2,7 +2,9 @@ import path from 'node:path';
 
 import { type AliasOptions, createLogger, mergeConfig, type Plugin, type UserConfig } from 'vite';
 
+import { compile } from './compile.js';
 import { load } from './load.js';
+import { type Result } from './result.js';
 import { cleanUrl } from './utils/clean-url.js';
 import { isGlobMatch } from './utils/is-glob-match.js';
 import { normalizeGlobs } from './utils/normalize-globs.js';
@@ -28,18 +30,6 @@ export interface Options {
  */
 export default ({ ignore = [], config: customConfig = {} }: Options = {}): Plugin => {
   /**
-   * Map of data loader module IDs to dependency paths so that the
-   * `handleHotUpdate` function can invalidate the correct modules.
-   */
-  const moduleDependencies = new Map<string, string[]>();
-
-  /**
-   * Map of data loader module IDs to watch patterns so that the
-   * `handleHotUpdate` function can invalidate the correct modules.
-   */
-  const moduleDependencyPatterns = new Map<string, string[]>();
-
-  /**
    * The `logger` from the resolved configuration.
    */
   let logger = createLogger();
@@ -60,11 +50,16 @@ export default ({ ignore = [], config: customConfig = {} }: Options = {}): Plugi
   let ignorePatterns: string[] = [];
 
   /**
-   * Log a prefixed message using the Vite logger.
+   * Log a prefixed info message.
    */
-  const log = (message: string): void => {
+  const info = (message: string): void => {
     logger.info(`[vite-plugin-data] ${message}`);
   };
+
+  /**
+   * Map of data loader module IDs to loaded results.
+   */
+  const results = new Map<string, Result>();
 
   return {
     name: 'vite-plugin-data',
@@ -88,110 +83,30 @@ export default ({ ignore = [], config: customConfig = {} }: Options = {}): Plugi
       // The ID does not end with a data loader extension.
       if (!/\.data\.(?:js|cjs|mjs|ts|cts|mts)$/iu.test(id)) return;
 
-      log(path.relative(root, id));
+      info(path.relative(root, id));
 
-      const {
-        exports,
-        dependencies,
-        dependencyPatterns,
-      } = await load(id, mergeConfig({ root, resolve: { alias } }, customConfig));
+      const config = mergeConfig({ root, resolve: { alias } }, customConfig);
+      const result = await load(id, config);
+      const code = await compile(result.exports);
 
-      moduleDependencies.set(id, dependencies);
-      moduleDependencyPatterns.set(id, dependencyPatterns);
+      results.set(id, result);
 
-      /**
-       * Static constant statement source strings generated from the data
-       * loader's exports. Promises are awaited, and their resolved values are
-       * converted to pre-resolved promise expressions.
-       */
-      const exportStatements = await Promise.all(Object.entries(exports).map(async ([key, value]) => {
-        /**
-         * Awaited (non-promise) value exported by the data loader. Only
-         * `Promise` instances are supported, not promise-like objects.
-         */
-        const resolved = value instanceof Promise ? await value : value;
-
-        /**
-         * Stringified representation of the JSON-safe export value.
-         */
-        const encoded = JSON.stringify(resolved, (_key, rawValue) => {
-          assertJsonSafe(rawValue);
-          return rawValue;
-        }, 2);
-
-        /**
-         * Either a default or named export statement prefix.
-         */
-        const prefix = key === 'default' ? 'default' : `const ${key} =`;
-
-        /**
-         * Either a simple value or a pre-resolved promise if the originally
-         * exported value was a promise.
-         */
-        const suffix = value instanceof Promise ? `Promise.resolve(${encoded})` : encoded;
-
-        return `export ${prefix} ${suffix};\n`;
-      }));
-
-      return { code: exportStatements.join(''), moduleSideEffects: false };
+      return { code, moduleSideEffects: false };
     },
     async handleHotUpdate(ctx) {
-      const invalidatedModuleIds = new Set<string>();
+      /**
+       * Modules that should be invalidated to trigger HMR.
+       */
+      const invalidate = new Set(ctx.modules);
 
-      // Collect module IDs that should be invalidated based on dependencies.
-      for (const [id, dependencies] of moduleDependencies.entries()) {
-        if (dependencies.includes(ctx.file)) {
-          invalidatedModuleIds.add(id);
+      // Add modules that should be invalidate based on result dependencies.
+      for (const [id, result] of results.entries()) {
+        if (result.dependsOn(ctx.file)) {
+          invalidate.add(ctx.server.moduleGraph.getModuleById(id)!);
         }
       }
 
-      // Collect module IDs that should be invalidated based on watch patterns.
-      for (const [id, patterns] of moduleDependencyPatterns.entries()) {
-        if (isGlobMatch(ctx.file, patterns)) {
-          invalidatedModuleIds.add(id);
-        }
-      }
-
-      // Start with the modules that are already known to be invalidated in
-      // the context, and add modules for all the invalidated IDs.
-      const invalidatedModules = new Set(ctx.modules);
-
-      // Resolve all of the module IDs to their corresponding modules.
-      for (const id of invalidatedModuleIds) {
-        const module = ctx.server.moduleGraph.getModuleById(id);
-
-        if (module) {
-          invalidatedModules.add(module);
-        }
-      }
-
-      return Array.from(invalidatedModules);
+      return Array.from(invalidate);
     },
   };
-};
-
-/**
- * Throw an error if the value is not safe to JSON stringify. Objects which
- * are instances of a class are considered unsafe, because data may be lost
- * when serializing and deserializing the object.
- */
-const assertJsonSafe = (value: unknown): void => {
-  if (value === null) return;
-  if (typeof value === 'string') return;
-  if (typeof value === 'number') return;
-  if (typeof value === 'boolean') return;
-  if (Array.isArray(value)) return;
-
-  // Objects must have a null/null-Object prototype which indicating they are
-  // not class instances, or a toJSON method which returns a JSON-safe value.
-  if (typeof value === 'object') {
-    if ('toJSON' in value && typeof value.toJSON === 'function') return;
-
-    const proto = Object.getPrototypeOf(value);
-
-    if (proto === Object.prototype) return;
-    if (proto === null) return;
-  }
-
-  throw new Error(`data loader exported value that is not JSON-safe`);
 };

@@ -7,29 +7,10 @@ import { build, mergeConfig, type Rollup, type UserConfig } from 'vite';
 import { overrideConfig } from './plugins/override-config.js';
 import { overrideIdentifiers } from './plugins/override-identifiers.js';
 import { trackDependencies } from './plugins/track-dependencies.js';
+import { Result } from './result.js';
 import { isEsmFile } from './utils/is-esm-file.js';
 import { makeTempDir } from './utils/make-temp-dir.js';
 import { parseCommentConfig } from './utils/parse-comment-config.js';
-
-/**
- * The results of loading a data loader file.
- */
-interface Result {
-  /**
-   * Exports resolved of the data loader file.
-   */
-  exports: Record<string, unknown>;
-  /**
-   * Absolute paths of file modules imported by the data loader file, including
-   * any transitive dependencies.
-   */
-  dependencies: string[];
-  /**
-   * Explicitly defined dependencies set in the data loader configuration
-   * comment. All paths are absolute and glob patterns are normalized.
-   */
-  dependencyPatterns: string[];
-}
 
 /**
  * Use Vite to transpile a data loader file to a temporary directory, and
@@ -131,7 +112,7 @@ export const load = async (
       parseCommentConfig(filename),
     ]);
 
-    return { exports, dependencies, dependencyPatterns };
+    return new Result({ exports, dependencies, dependencyPatterns });
   }
   finally {
     await cleanupOutDir();
