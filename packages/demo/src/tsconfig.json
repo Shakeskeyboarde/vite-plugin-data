@@ -7,5 +7,9 @@
       "DOM.Iterable"
     ],
     "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+    }
   }
 }

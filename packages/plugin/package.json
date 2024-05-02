@@ -2,7 +2,7 @@
   "name": "vite-plugin-data",
   "description": "Resolve and bundle data loader file exports at build-time.",
   "license": "ISC",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/Shakeskeyboarde/vite-plugin-data.git",
@@ -42,9 +42,8 @@
   },
   "dependencies": {
     "@types/picomatch": "^2.3.3",
+    "magic-string": "^0.30.10",
     "picomatch": "^4.0.2",
-    "really-relaxed-json": "^0.3.2",
-    "ts-node": "^10.9.2",
-    "zod": "^3.23.4"
+    "really-relaxed-json": "^0.3.2"
   }
 }

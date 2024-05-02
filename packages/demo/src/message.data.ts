@@ -1,6 +1,7 @@
 /* vite-plugin-data {
-  watch: ./message.json
+  dependencies: ./message.json
 } */
+
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import url from 'node:url';
@@ -34,3 +35,5 @@ export const promise = Promise.resolve().then(async () => {
  * Message from the local JSON file.
  */
 export default JSON.parse(text).message as string;
+
+export { bar } from '@/bar.js';

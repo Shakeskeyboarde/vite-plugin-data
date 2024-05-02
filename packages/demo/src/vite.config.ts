@@ -1,11 +1,10 @@
 import path from 'node:path';
-import url from 'node:url';
 
 import { defineConfig } from 'vite';
 import { checker } from 'vite-plugin-checker';
-import data from 'vite-plugin-data';
+import { data } from 'vite-plugin-data';
 
-process.chdir(path.dirname(url.fileURLToPath(import.meta.url)));
+process.chdir(__dirname);
 
 export default defineConfig({
   plugins: [
@@ -13,7 +12,13 @@ export default defineConfig({
     data(),
   ],
   build: {
+    target: ['node18'],
     outDir: '../dist',
     emptyOutDir: true,
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, '.'),
+    },
   },
 });

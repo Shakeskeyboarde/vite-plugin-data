@@ -22,7 +22,7 @@ npm install --save-dev vite-plugin-data
 Add the plugin to your Vite configuration.
 
 ```ts
-import data from 'vite-plugin-data';
+import { data } from 'vite-plugin-data';
 
 export default defineConfig({
   plugins: [
@@ -49,8 +49,6 @@ Import the the data loader just like any other source file. No special handling 
 
 ```ts
 import { timestamp } from './timestamp.data.js';
-
-console.log(timestamp);
 ```
 
 ## Plugin Options
@@ -68,19 +66,42 @@ data({
 
 > NOTE: Files inside `node_modules` directories are always ignored.
 
-## Adding Watch Patterns
+### config
 
-Sometimes your data loaders may depend on other files. If those other files change, the data loader should also be considered changed for the purposes of HMR. You can provide watch patterns (globs) using a configuration comment in the data loader. All paths must use forward slashes. Relative paths are relative to the data loader containing the comment.
+A Vite configuration (`UserConfig`) object that is used to transpile/bundle data loaders. By default, the plugin uses an internal Vite configuration that only inherits the `root` and `resolve.alias` options from parent configuration.
+
+```ts
+data({
+  // Custom Vite configuration used to transpile/bundle data loaders.
+  config: {
+    build: {
+      target: 'node20',
+    },
+  },
+});
+```
+
+## Data Loader Dependencies
+
+Data loaders may use file system resources that are not imported or required. These dependencies can't be detected automatically by Vite, so they must be defined explicitly. This is done using a special configuration comment in a data loader file.
+
+Here's an example of a data loader that reads the contents of a text file.
 
 ```ts
 /* vite-plugin-data {
-  watch: ["./*.json"]
+  dependencies: ["./data.txt"]
 } */
+
+const text = await fs.readFile(path.resolve(__dirname, './data.txt'), 'utf8');
 ```
 
-The JSON object which follows the `vite-plugin-data` comment keyword is parsed as [Relaxed JSON (aka: RJSON)](https://www.relaxedjson.org/). The most important differences are that simple keys and values do not need to be quoted, and single (`'`) or backtick (`` ` ``) quotes can be used in place of double quotes (`"`) when necessary.
+The configuration comment is always a block comment, that starts with the `vite-plugin-data` prefix, followed by a JSON-like configuration object. The `dependencies` property is an array of glob patterns that the data loader depends on.
 
-> NOTE: Data loader imports are not automatically watched. You must watch them explicitly.
+> NOTE: Relative paths must start with a dot (`.`) and are relative to the data loader directory (`__dirname`), just like a relative import/require path would be.
+
+> NOTE: The JSON-like configuration value is parsed as [Relaxed JSON (aka: RJSON)](https://www.relaxedjson.org/). The most important differences are that simple keys and values do not need to be quoted, and single (`'`) or backtick (`` ` ``) quotes can be used in place of double quotes (`"`) when necessary.
+
+> NOTE: The `dependencies` configuration only works if the paths are watched by Vite. Vite only watches the [root](https://vitejs.dev/config/shared-options.html#root) directory. This plugin does _not_ watch any additional paths. If your data loader has dependencies outside of the root, then you will need to use a custom configuration and/or additional plugins to add additional paths to the watcher so that HMR is aware of changes to those dependency files.
 
 ## Limitations
 
@@ -99,4 +120,46 @@ Exported promises are awaited at build-time. The resolved value is injected into
 
 ## Side Effects
 
-Data loader files are resolved at build-time to JSON-compatible data. The bundle only contains the resolved data, not the module implementation that created it. Therefore, data loaders cannot have runtime side-effects and are marked as side-effect-free and tree-shakable in the Vite build.
+Data loaders are not tree-shaken at build-time, so they can have build-time
+side-effects.
+
+However, the final bundle does not contain the data loader source, only its static exports. So, data loaders cannot have runtime side-effects. As such, the transpiled data is marked as side-effect-free and can be tree-shaken out of the
+final bundle.
+
+## API
+
+In addition to the Vite plugin, the following exports are also available.
+
+### `load`
+
+Get the exports of a data loader. This will bundle the data loader and import
+the bundle entrypoint.
+
+Signature:
+
+```ts
+async function load(filename: string, config?: UserConfig): Promise<Result>;
+```
+
+Example:
+
+```ts
+import { load } from 'vite-plugin-data';
+
+const {
+  exports,
+  dependencies,
+  dependencyPatterns
+} = await load('./timestamp.data.js', {
+  // Optional Vite config for data loader bundling.
+});
+```
+
+Returns:
+
+- `exports`
+  - Result of importing the data loader bundle.
+- `dependencies`
+  - Absolute paths of all modules included in the data loader bundle.
+- `dependencyPatterns`
+  - Normalized dependency patterns defined in the data loader configuration comment.
