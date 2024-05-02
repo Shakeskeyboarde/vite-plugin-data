@@ -2,7 +2,7 @@
   "name": "vite-plugin-data",
   "description": "Resolve and bundle data loader file exports at build-time.",
   "license": "ISC",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/Shakeskeyboarde/vite-plugin-data.git",
@@ -23,7 +23,7 @@
     "resolve"
   ],
   "scripts": {
-    "build": "tsc -p src/tsconfig.build.json",
+    "build": "rm -rf lib && tsc -p src/tsconfig.build.json",
     "prepublishOnly": "pnpm build"
   },
   "files": [
