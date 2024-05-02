@@ -18,8 +18,8 @@ importers:
         specifier: ^8.57.0
         version: 8.57.0
       eslint-config-rational:
-        specifier: ^5.0.11
-        version: 5.0.11(eslint@8.57.0)(typescript@5.4.5)
+        specifier: ^5.0.12
+        version: 5.0.12(eslint@8.57.0)(typescript@5.4.5)
       typescript:
         specifier: ^5.4.5
         version: 5.4.5
@@ -866,8 +866,8 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  eslint-config-rational@5.0.11:
-    resolution: {integrity: sha512-0N1aa5NHik+pjPHcH013DntElAN4WsGeFjGFA6g5PhGiE305PMkV6yPPU21VkYUeOTWt6j1VLXc+w3THbBR68Q==}
+  eslint-config-rational@5.0.12:
+    resolution: {integrity: sha512-eAEwRpbfV8kc9TAascRzf56hDtnwTN0HiwSbXeRUfnLgh7bkV+B8mMjbePSPWbhuyKky8euPXPRLqJ3pInk8dQ==}
 
   eslint-import-resolver-node@0.3.9:
     resolution: {integrity: sha512-WFj2isz22JahUv+B788TlO3N6zL3nNJGU8CcZbPZvVEkBPaJdCV4vy5wyghty5ROFbCRnm132v8BScu5/1BQ8g==}
@@ -2986,7 +2986,7 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-config-rational@5.0.11(eslint@8.57.0)(typescript@5.4.5):
+  eslint-config-rational@5.0.12(eslint@8.57.0)(typescript@5.4.5):
     dependencies:
       '@eslint/eslintrc': 3.0.2
       '@eslint/js': 9.1.1

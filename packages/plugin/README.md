@@ -1,8 +1,8 @@
 # Vite Plugin Data
 
-A Vite plugin that resolves the exports of data loader files at build-time and replaces the original file source with the pre-resolved exports.
+A Vite plugin that resolves the exports of data loaders at build-time and replaces the original file source with the pre-resolved exports.
 
-A "data loader" file is a source file with one of the following extensions:
+A "data loader" is a source file with one of the following extensions:
 
 - `.data.js`
 - `.data.cjs`
@@ -83,7 +83,7 @@ data({
 
 ## Data Loader Dependencies
 
-Data loaders may use file system resources that are not imported or required. These dependencies can't be detected automatically by Vite, so they must be defined explicitly. This is done using a special configuration comment in a data loader file.
+Data loaders may use file system resources that are not imported or required. These dependencies can't be detected automatically, so they must be defined explicitly. This is done using a special configuration comment in a data loader file.
 
 Here's an example of a data loader that reads the contents of a text file.
 
@@ -95,7 +95,7 @@ Here's an example of a data loader that reads the contents of a text file.
 const text = await fs.readFile(path.resolve(__dirname, './data.txt'), 'utf8');
 ```
 
-The configuration comment is always a block comment, that starts with the `vite-plugin-data` prefix, followed by a JSON-like configuration object. The `dependencies` property is an array of glob patterns that the data loader depends on.
+The configuration comment is always a block comment with a `vite-plugin-data` prefix, followed by a JSON-like configuration object. The `dependencies` property is an array of glob patterns that the data loader depends on.
 
 > NOTE: Relative paths must start with a dot (`.`) and are relative to the data loader directory (`__dirname`), just like a relative import/require path would be.
 
