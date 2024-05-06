@@ -11,3 +11,5 @@ coverage/
 *.tgz
 *.zip
 *.log
+
+!**/__tests__/src/node_modules
