@@ -8,6 +8,7 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 export default defineConfig({
   test: {
     reporters: ['verbose'],
+    setupFiles: [path.resolve(__dirname, 'vitest.setup.ts')],
     coverage: {
       enabled: true,
       all: true,
