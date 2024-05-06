@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { type AliasOptions, createLogger, mergeConfig, type Plugin, type UserConfig } from 'vite';
+import { type Alias, createLogger, type Logger, type LogLevel, mergeConfig, type ModuleNode, type Plugin as VitePlugin, type UserConfig } from 'vite';
 
 import { compile } from './compile.js';
 import { load } from './load.js';
@@ -8,6 +8,42 @@ import { type Result } from './result.js';
 import { cleanUrl } from './utils/clean-url.js';
 import { isGlobMatch } from './utils/is-glob-match.js';
 import { normalizeGlobs } from './utils/normalize-globs.js';
+
+/**
+ * Plugin interface exported by the vite-plugin-data plugin.
+ */
+export interface Plugin extends VitePlugin {
+  /**
+   * Uses the `logger`, `logLevel`, `root`, and `resolve.alias` config.
+   */
+  configResolved(config: {
+    logger: Pick<Logger, 'info'>;
+    logLevel?: LogLevel;
+    root: string;
+    resolve: {
+      alias: readonly Alias[];
+    };
+  }): void;
+
+  /**
+   * Loads and compiles data loader files.
+   */
+  load(id: string): Promise<{ code: string; moduleSideEffects: false } | void>;
+
+  /**
+   * Invalidates additional modules based on data loader imports/requires and
+   * config comment dependencies.
+   */
+  handleHotUpdate(ctx: {
+    file: string;
+    modules: ModuleNode[];
+    server: {
+      moduleGraph: {
+        getModuleById(id: string): ModuleNode | undefined;
+      };
+    };
+  }): ModuleNode[];
+}
 
 /**
  * Options for the vite-plugin-data plugin.
@@ -18,6 +54,7 @@ export interface Options {
    * directories are ignored.
    */
   ignore?: string[];
+
   /**
    * Provide a custom Vite configuration to use when transpiling data loaders.
    */
@@ -28,10 +65,11 @@ export interface Options {
  * A Vite plugin that resolves the exports of data loader files at build-time
  * and replaces the original file source with the pre-resolved exports.
  */
-export default ({ ignore = [], config: customConfig = {} }: Options = {}): Plugin => {
+export const plugin = ({ ignore = [], config: customConfig = {} }: Options = {}): Plugin => {
   /**
    * The `logger` from the resolved configuration.
    */
+  let logger: Pick<Logger, 'info'> = createLogger();
 
   /**
    * The `logLevel` from the resolved configuration.
@@ -46,7 +84,7 @@ export default ({ ignore = [], config: customConfig = {} }: Options = {}): Plugi
   /**
    * The `resolve.alias` from the resolved configuration.
    */
-  let alias: AliasOptions | undefined;
+  let alias: readonly Alias[];
 
   /**
    * Absolute ignore patterns which are normalized to the `config.root`.
@@ -102,7 +140,7 @@ export default ({ ignore = [], config: customConfig = {} }: Options = {}): Plugi
 
       return { code, moduleSideEffects: false };
     },
-    async handleHotUpdate(ctx) {
+    handleHotUpdate(ctx) {
       /**
        * Modules that should be invalidated to trigger HMR.
        */
