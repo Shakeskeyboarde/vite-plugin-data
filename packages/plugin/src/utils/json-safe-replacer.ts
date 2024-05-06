@@ -1,12 +1,19 @@
 /**
-* Throws an error if the value is not safe to JSON stringify. Objects which
-* are instances of a class are considered unsafe, because data may be lost
-* when serializing and deserializing the object.
-*/
-export const assertJsonSafe = (value: unknown): void => {
+ * Replacer function for `JSON.stringify` which throws an error if the value is
+ * not safe to JSON stringify. Otherwise, the value is returned.
+ *
+ * Objects which are instances of a class are considered unsafe, because data
+ * may be lost when serializing and deserializing the object.
+ */
+export const jsonSafeReplacer = <T>(_key: string, value: T): T => {
+  assertJsonSafe(value);
+  return value;
+};
+
+const assertJsonSafe = (value: unknown): void => {
   if (value === null) return;
   if (typeof value === 'string') return;
-  if (typeof value === 'number') return;
+  if (typeof value === 'number' && !Number.isNaN(value)) return;
   if (typeof value === 'boolean') return;
   if (Array.isArray(value)) return;
 

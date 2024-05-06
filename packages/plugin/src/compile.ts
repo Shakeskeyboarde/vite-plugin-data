@@ -1,4 +1,4 @@
-import { assertJsonSafe } from './utils/assert-json-safe.js';
+import { jsonSafeReplacer } from './utils/json-safe-replacer.js';
 
 /**
  * Compile a JSON-safe object to Javascript code containing export statements
@@ -27,10 +27,7 @@ export const compile = async <T extends Record<string, unknown>>(exports: T): Pr
     /**
      * Stringified representation of the JSON-safe export value.
      */
-    const encoded = JSON.stringify(resolved, (_, v) => {
-      assertJsonSafe(v);
-      return v;
-    }, 2);
+    const encoded = JSON.stringify(resolved, jsonSafeReplacer, 2);
 
     /**
      * Either a default or named export statement prefix.
