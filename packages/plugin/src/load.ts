@@ -104,9 +104,9 @@ export const load = async (
   const mergedConfig: UserConfig = mergeConfig(configDefaults, mergeConfig(config, configOverrides));
 
   try {
-    const results = await build(mergedConfig);
-    const result = (Array.isArray(results) ? results[0] : results) as Rollup.RollupOutput;
-    const entry = path.resolve(outDir, result.output[0].fileName);
+    const outputs = await build(mergedConfig);
+    const output = (Array.isArray(outputs) ? outputs[0] : outputs) as Rollup.RollupOutput;
+    const entry = path.resolve(outDir, output.output[0].fileName);
     const [exports, dependencyPatterns] = await Promise.all([
       import(entry) as Promise<Record<string, unknown>>,
       parseCommentConfig(filename),
