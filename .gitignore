@@ -13,3 +13,4 @@ coverage/
 *.log
 
 !**/__tests__/src/node_modules
+**/__tests__/src/node_modules/.*
