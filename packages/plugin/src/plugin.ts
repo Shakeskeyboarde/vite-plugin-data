@@ -32,7 +32,11 @@ export default ({ ignore = [], config: customConfig = {} }: Options = {}): Plugi
   /**
    * The `logger` from the resolved configuration.
    */
-  let logger = createLogger();
+
+  /**
+   * The `logLevel` from the resolved configuration.
+   */
+  let logLevel: LogLevel | undefined;
 
   /**
    * The `root` from the resolved configuration.
@@ -66,6 +70,7 @@ export default ({ ignore = [], config: customConfig = {} }: Options = {}): Plugi
     enforce: 'pre',
     configResolved(config) {
       logger = config.logger;
+      logLevel = config.logLevel;
       root = config.root;
       alias = config.resolve.alias;
       ignorePatterns = normalizeGlobs(ignore, config.root);
@@ -85,7 +90,11 @@ export default ({ ignore = [], config: customConfig = {} }: Options = {}): Plugi
 
       info(path.relative(root, id));
 
-      const config = mergeConfig({ root, resolve: { alias } }, customConfig);
+      const config = mergeConfig({
+        logLevel: logLevel === undefined || logLevel === 'info' ? 'warn' : logLevel,
+        root,
+        resolve: { alias },
+      }, customConfig);
       const result = await load(id, config);
       const code = await compile(result.exports);
 
