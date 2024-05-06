@@ -14,6 +14,8 @@ export default defineConfig({
       all: true,
       reporter: ['html', 'text-summary'],
       reportsDirectory: path.resolve(__dirname, 'out/coverage'),
+      include: ['**/packages/plugin/src/**'],
+      exclude: ['**/__tests__', '**/packages/plugin/src/index.ts'],
     },
   },
 });
