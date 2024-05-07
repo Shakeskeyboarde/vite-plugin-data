@@ -10,10 +10,6 @@ import { normalizePath } from 'vite';
  * - Deduplicate patterns.
  */
 export const normalizeGlobs = (patterns: string | string[], root: string): string[] => {
-  if (typeof patterns === 'string') {
-    patterns = [patterns];
-  }
-
   return Array.from(new Set((typeof patterns === 'string' ? [patterns] : patterns)
     .map((pattern) => {
       // XXX: This is not really a complete way of making absolute globs, but
