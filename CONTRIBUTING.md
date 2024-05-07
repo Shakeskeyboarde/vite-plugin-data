@@ -28,6 +28,19 @@ Please use the following style guide when contributing to this project.
 
 This project uses ESLint to check style, but not all rules are strictly enforced, and you should use your best judgment when contributing.
 
+If you use VSCode (recommended), you can install the [ESLint extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) to get real-time feedback on your code.
+
+Useful VSCode [Project Settings](.vscode/settings.json):
+
+```json
+{
+  "explorer.excludeGitIgnore": true,
+  "eslint.format.enable": true,
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  "editor.tabSize": 2,
+}
+```
+
 ## Test
 
 Please add/modify tests for any code changes you make. Generally, we want test files to be fairly self contained, so please keep any utilities, fixtures, or constants in the same file as the tests that use them. Test files should be placed in the `__tests__` directory.
