@@ -45,7 +45,7 @@ Useful VSCode [Project Settings](.vscode/settings.json):
 
 Please add/modify tests for any code changes you make. Generally, we want test files to be fairly self contained, so please keep any utilities, fixtures, or constants in the same file as the tests that use them. Test files should be placed in the `__tests__` directory.
 
-## Pull Requests
+## Merge
 
 Once you open a PR, it will be reviewed by a maintainer. If the PR is approved, it will be merged. If the PR is not approved, the maintainer will leave a comment explaining why, and possible changes that could be made to get the PR approved.
 
