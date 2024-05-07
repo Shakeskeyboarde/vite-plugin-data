@@ -1,0 +1,45 @@
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  TERM: xterm-256color
+  FORCE_COLOR: 1
+
+jobs:
+  pull-request:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Restore
+        run: |
+          set -e
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Build
+        run: |
+          set -e
+          pnpm build
+        
+      - name: Test
+        run: |
+          set -e
+          pnpm test
+
+      - name: Publish (Dry Run)
+        run: |
+          set -e
+          pnpm -r publish --dry-run

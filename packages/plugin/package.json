@@ -23,8 +23,7 @@
     "resolve"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc -p src/tsconfig.build.json",
-    "prepublishOnly": "pnpm build"
+    "build": "rm -rf lib && tsc -p src/tsconfig.build.json"
   },
   "files": [
     "lib"
