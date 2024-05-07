@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { type Alias, createLogger, type Logger, type LogLevel, mergeConfig, type ModuleNode, type Plugin as VitePlugin, type UserConfig } from 'vite';
+import { type Alias, type Logger, type LogLevel, mergeConfig, type ModuleNode, type Plugin as VitePlugin, type UserConfig } from 'vite';
 
 import { compile } from './compile.js';
 import { load } from './load.js';
@@ -67,35 +67,25 @@ export interface Options {
  */
 export const plugin = ({ ignore = [], config: customConfig = {} }: Options = {}): Plugin => {
   /**
-   * The `logger` from the resolved configuration.
+   * Values derived from the resolved configuration (See the `configResolved`
+   * hook).
    */
-  let logger: Pick<Logger, 'info'> = createLogger();
-
-  /**
-   * The `logLevel` from the resolved configuration.
-   */
-  let logLevel: LogLevel | undefined;
-
-  /**
-   * The `root` from the resolved configuration.
-   */
-  let root: string;
-
-  /**
-   * The `resolve.alias` from the resolved configuration.
-   */
-  let alias: readonly Alias[];
-
-  /**
-   * Absolute ignore patterns which are normalized to the `config.root`.
-   */
-  let ignorePatterns: string[] = [];
+  let config: {
+    logger: Pick<Logger, 'info'>;
+    logLevel: Exclude<LogLevel, 'info'>;
+    root: string;
+    alias: readonly Alias[];
+    /**
+     * Absolute ignore patterns which are normalized to the `config.root`.
+     */
+    ignore: readonly string[];
+  };
 
   /**
    * Log a prefixed info message.
    */
   const info = (message: string): void => {
-    logger.info(`[vite-plugin-data] ${message}`);
+    config.logger?.info(`[vite-plugin-data] ${message}`);
   };
 
   /**
@@ -106,12 +96,14 @@ export const plugin = ({ ignore = [], config: customConfig = {} }: Options = {})
   return {
     name: 'vite-plugin-data',
     enforce: 'pre',
-    configResolved(config) {
-      logger = config.logger;
-      logLevel = config.logLevel;
-      root = config.root;
-      alias = config.resolve.alias;
-      ignorePatterns = normalizeGlobs(ignore, config.root);
+    configResolved({ logger, logLevel = 'warn', root, resolve: { alias } }) {
+      config = {
+        logger,
+        logLevel: logLevel === 'info' ? 'warn' : logLevel,
+        root,
+        alias,
+        ignore: normalizeGlobs(ignore, root),
+      };
     },
     async load(id) {
       // The ID is not an absolute file path.
@@ -121,19 +113,19 @@ export const plugin = ({ ignore = [], config: customConfig = {} }: Options = {})
       id = cleanUrl(id);
 
       // The ID matches an ignore pattern.
-      if (isGlobMatch(id, ['**/node_modules/**', ...ignorePatterns])) return;
+      if (isGlobMatch(id, ['**/node_modules/**', ...config.ignore])) return;
 
       // The ID does not end with a data loader extension.
       if (!/\.data\.(?:js|cjs|mjs|ts|cts|mts)$/iu.test(id)) return;
 
-      info(path.relative(root, id));
+      info(path.relative(config.root, id));
 
-      const config = mergeConfig({
-        logLevel: logLevel === undefined || logLevel === 'info' ? 'warn' : logLevel,
-        root,
-        resolve: { alias },
+      const mergedConfig = mergeConfig({
+        logLevel: config.logLevel,
+        root: config.root,
+        resolve: { alias: config.alias },
       }, customConfig);
-      const result = await load(id, config);
+      const result = await load(id, mergedConfig);
       const code = await compile(result.exports);
 
       results.set(id, result);
