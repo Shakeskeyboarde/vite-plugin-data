@@ -20,9 +20,12 @@ Please use the following style guide when contributing to this project.
 
 - Use 2 spaces for indentation.
 - Use single quotes for strings.
-- Use `camelCase` for variable names.
+- Use `camelCase` for variable and function names.
 - Use `PascalCase` for class names.
 - Use `kebab-case` for filenames.
+  - Name the file after the class or function it exports.
+  - Export only one class or function per file.
+  - Exporting supporting types is also fine.
 - Wrap all code at 120 characters (max).
 - Use Expect (instead of Assert) syntax for tests.
 
