@@ -1,48 +1,68 @@
-import { expect, test } from "vitest";
-import { compile } from "../compile.js";
-import {
-  MOCK_EXPORTS_WITH_PROMISE,
-  MOCK_JSON_SAFE_EXPORTS,
-  MOCK_JSON_UNSAFE_EXPORTS,
-} from "../__mocks__/compile.mock.js";
+import { expect, test } from 'vitest';
 
-test("generates default export", async () => {
-  const code = await compile(MOCK_JSON_SAFE_EXPORTS);
-  expect(code).toContain(
-    `export default ${JSON.stringify(MOCK_JSON_SAFE_EXPORTS.default, null, 2)}`,
-  );
+import { compile } from '../compile.js';
+
+test('generates default export', async () => {
+  const exports = { default: 2 };
+  const code = await compile(exports);
+  expect(code).toMatchInlineSnapshot(`
+    "export default 2;
+    "
+  `);
 });
 
-test("generates named exports", async () => {
-  const code = await compile(MOCK_JSON_SAFE_EXPORTS);
-  expect(code).toContain(`export const day = "${MOCK_JSON_SAFE_EXPORTS.day}"`);
-  expect(code).toContain(
-    `export const month = ${MOCK_JSON_SAFE_EXPORTS.month}`,
-  );
-  expect(code).toContain(`export const year = ${MOCK_JSON_SAFE_EXPORTS.year}`);
-  expect(code).toContain(`export const date = ${MOCK_JSON_SAFE_EXPORTS.date}`);
-  expect(code).toContain(
-    `export const month = ${MOCK_JSON_SAFE_EXPORTS.month}`,
-  );
-  expect(code).toContain(
-    `export const dummyObject = ${JSON.stringify(MOCK_JSON_SAFE_EXPORTS.dummyObject, null, 2)}`,
-  );
+test('generates named exports', async () => {
+  const code = await compile({
+    foo: 'bar',
+    fizz: {
+      buzz: {
+        fizz: {
+          buzz: 'fizz',
+        },
+      },
+    },
+  });
+  expect(code).toMatchInlineSnapshot(`
+    "export const foo = "bar";
+    export const fizz = {
+      "buzz": {
+        "fizz": {
+          "buzz": "fizz"
+        }
+      }
+    };
+    "
+  `);
 });
 
-test("throws error when unsafe JSON is passed", async () => {
-  await expect(compile(MOCK_JSON_UNSAFE_EXPORTS)).rejects.toThrow(
-    `data loader exported value that is not JSON-safe`,
-  );
+test('throws error when unsafe JSON is passed', async () => {
+  await expect(
+    compile({
+      unsafeFunction: (s: string) => {
+        return s + s;
+      },
+      unsafeClass: class MOCK_CLASS {
+        field = 5;
+      },
+    }),
+  ).rejects.toThrow(`data loader exported value that is not JSON-safe`);
 });
 
-test("generates resolved promises", async () => {
-  const code = await compile(MOCK_EXPORTS_WITH_PROMISE);
+test('generates resolved promises', async () => {
+  const code = await compile({
+    bio: Promise.resolve({ name: 'Bob', age: 15 }),
+    default: Promise.resolve(15),
+  });
   const [resolvedDefault, resolvedBio] = await Promise.all([
-    MOCK_EXPORTS_WITH_PROMISE.default,
-    MOCK_EXPORTS_WITH_PROMISE.bio,
+    exports.default,
+    exports.bio,
   ]);
-  expect(code).toContain(
-    `export const bio = Promise.resolve(${JSON.stringify(resolvedBio, null, 2)})`,
-  );
-  expect(code).toContain(`export default Promise.resolve(${resolvedDefault})`);
+  expect(code).toMatchInlineSnapshot(`
+    "export const bio = Promise.resolve({
+      "name": "Bob",
+      "age": 15
+    });
+    export default Promise.resolve(15);
+    "
+  `);
 });
