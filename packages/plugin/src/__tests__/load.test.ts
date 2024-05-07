@@ -18,7 +18,9 @@ test('bundles and imports a data loader module', async () => {
 });
 
 test('correctly detects dependencies', async () => {
-  const { dependencies } = await load(path.resolve(__dirname, 'src/demo.data.ts'));
+  const { dependencies } = await load(
+    path.resolve(__dirname, 'src/demo.data.ts'),
+  );
 
   expect(dependencies).toStrictEqual([
     normalizePath(path.resolve(__dirname, 'src/demo.data.ts')),
@@ -27,7 +29,9 @@ test('correctly detects dependencies', async () => {
 });
 
 test('correctly detects dependency patterns', async () => {
-  const { dependencyPatterns } = await load(path.resolve(__dirname, 'src/demo.data.ts'));
+  const { dependencyPatterns } = await load(
+    path.resolve(__dirname, 'src/demo.data.ts'),
+  );
 
   expect(dependencyPatterns).toStrictEqual([
     normalizePath(path.resolve(__dirname, 'src/data.txt')),
@@ -38,9 +42,19 @@ test('injects expected module constants', async () => {
   const result = await load(path.resolve(__dirname, 'src/meta.data.ts'));
   const exports: Record<string, any> = result.exports;
 
-  expect(exports.default.url).toBe('file://' + normalizePath(path.resolve(__dirname, 'src/meta.data.ts')));
-  expect(exports.default.filename).toBe(normalizePath(path.resolve(__dirname, 'src/meta.data.ts')));
-  expect(exports.default.dirname).toBe(normalizePath(path.resolve(__dirname, 'src')));
-  expect(exports.default.__filename).toBe(normalizePath(path.resolve(__dirname, 'src/meta.data.ts')));
-  expect(exports.default.__dirname).toBe(normalizePath(path.resolve(__dirname, 'src')));
+  expect(exports.default.url).toBe(
+    'file://' + normalizePath(path.resolve(__dirname, 'src/meta.data.ts')),
+  );
+  expect(exports.default.filename).toBe(
+    normalizePath(path.resolve(__dirname, 'src/meta.data.ts')),
+  );
+  expect(exports.default.dirname).toBe(
+    normalizePath(path.resolve(__dirname, 'src')),
+  );
+  expect(exports.default.__filename).toBe(
+    normalizePath(path.resolve(__dirname, 'src/meta.data.ts')),
+  );
+  expect(exports.default.__dirname).toBe(
+    normalizePath(path.resolve(__dirname, 'src')),
+  );
 });
