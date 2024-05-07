@@ -42,7 +42,10 @@ jobs:
           set -e
           pnpm test
 
-      - name: Publish (Dry Run)
+      - name: Publish (dry-run)
         run: |
           set -e
+          pnpm config --location=project set //registry.npmjs.org/:_authToken '${NPM_TOKEN}'
           pnpm -r publish --dry-run
+        env:
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
