@@ -53,10 +53,6 @@ test('generates resolved promises', async () => {
     bio: Promise.resolve({ name: 'Bob', age: 15 }),
     default: Promise.resolve(15),
   });
-  const [resolvedDefault, resolvedBio] = await Promise.all([
-    exports.default,
-    exports.bio,
-  ]);
   expect(code).toMatchInlineSnapshot(`
     "export const bio = Promise.resolve({
       "name": "Bob",
