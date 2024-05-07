@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { jsonSafeReplacer } from '../../utils/json-safe-replacer.js';
+import { jsonSafeReplacer } from '../utils/json-safe-replacer.js';
 
 class Unsafe {}
 
