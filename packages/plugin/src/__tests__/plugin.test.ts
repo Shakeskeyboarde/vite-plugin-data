@@ -111,7 +111,7 @@ test('merges user provided Vite config into the internal config', async () => {
   expect(lastConfig.resolve.alias).toEqual(expect.arrayContaining([{ find: 'foo', replacement: 'FOO' }, { find: 'bar', replacement: 'BAR' }]));
 });
 
-test('handleHotUpdate hook invalidates additional modules related to the data loader', async () => {
+test('handleHotUpdate invalidates data loader module when dependencies are modified', async () => {
   const instance = plugin();
   const entryId = normalizePath(path.resolve(__dirname, './src/demo.data.ts'));
   const someOtherModule = { file: '/some/other/module.ts' } as ModuleNode;
