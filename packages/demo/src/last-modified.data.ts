@@ -21,7 +21,7 @@ system, which it would not have access to if it were simply bundled and run in
 the browser.
 
 Top-level awaits are used in this module to read the file system
-asynchronously. This works because this is an ES module.
+asynchronously, which is possible because this is an ES module.
 */
 
 /**
