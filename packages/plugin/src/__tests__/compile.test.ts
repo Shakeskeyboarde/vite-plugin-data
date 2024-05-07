@@ -5,6 +5,7 @@ import { compile } from '../compile.js';
 test('generates default export', async () => {
   const exports = { default: 2 };
   const code = await compile(exports);
+
   expect(code).toMatchInlineSnapshot(`
     "export default 2;
     "
@@ -22,6 +23,7 @@ test('generates named exports', async () => {
       },
     },
   });
+
   expect(code).toMatchInlineSnapshot(`
     "export const foo = "bar";
     export const fizz = {
@@ -36,16 +38,9 @@ test('generates named exports', async () => {
 });
 
 test('throws error when unsafe JSON is passed', async () => {
-  await expect(
-    compile({
-      unsafeFunction: (s: string) => {
-        return s + s;
-      },
-      unsafeClass: class MOCK_CLASS {
-        field = 5;
-      },
-    }),
-  ).rejects.toThrow(`data loader exported value that is not JSON-safe`);
+  await expect(async () => {
+    await compile({ unsafeFunction: () => undefined });
+  }).rejects.toThrow(`data loader exported value that is not JSON-safe`);
 });
 
 test('generates resolved promises', async () => {
@@ -53,6 +48,7 @@ test('generates resolved promises', async () => {
     bio: Promise.resolve({ name: 'Bob', age: 15 }),
     default: Promise.resolve(15),
   });
+
   expect(code).toMatchInlineSnapshot(`
     "export const bio = Promise.resolve({
       "name": "Bob",
