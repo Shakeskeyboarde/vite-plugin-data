@@ -20,6 +20,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Use Corepack
+        run: |
+          set -e
+          corepack enable
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -29,7 +34,6 @@ jobs:
       - name: Restore
         run: |
           set -e
-          corepack enable
           pnpm install --frozen-lockfile
 
       - name: Build
