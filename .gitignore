@@ -6,6 +6,7 @@ out/
 coverage/
 
 .DS_Store
+.npmrc
 *.tar
 *.gz
 *.tgz
